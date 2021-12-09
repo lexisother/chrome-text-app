@@ -20,7 +20,7 @@ function TextApp() {
  * Called when all the resources have loaded. All initializations should be done
  * here.
  */
-TextApp.prototype.init = function() {
+TextApp.prototype.init = function () {
   this.settings_ = new Settings();
   // Editor is initalised after settings are ready.
   this.editor_ = null;
@@ -38,7 +38,7 @@ TextApp.prototype.init = function() {
  * successfully opened.
  * @param {!Array.<FileEntry>} entries The file entries to be opened.
  */
-TextApp.prototype.openTabs = function(entries) {
+TextApp.prototype.openTabs = function (entries) {
   for (var i = 0; i < entries.length; i++) {
     this.tabs_.openFileEntry(entries[i]);
   }
@@ -48,7 +48,7 @@ TextApp.prototype.openTabs = function(entries) {
   }
 };
 
-TextApp.prototype.setHasChromeFrame = function(hasFrame) {
+TextApp.prototype.setHasChromeFrame = function (hasFrame) {
   this.hasFrame_ = hasFrame;
   this.windowController_.windowControlsVisible(!hasFrame);
 };
@@ -56,11 +56,11 @@ TextApp.prototype.setHasChromeFrame = function(hasFrame) {
 /**
  * @return {Array.<FileEntry>}
  */
-TextApp.prototype.getFilesToRetain = function() {
+TextApp.prototype.getFilesToRetain = function () {
   return this.tabs_.getFilesToRetain();
 };
 
-TextApp.prototype.setTheme = function() {
+TextApp.prototype.setTheme = function () {
   var theme = this.settings_.get('theme');
   this.windowController_.setTheme(theme);
   this.editor_.setTheme(theme);
@@ -70,7 +70,7 @@ TextApp.prototype.setTheme = function() {
  * Remove the editor so it can be reinitialized.
  * @param editorRootElement The DOM element containing the editor.
  */
-TextApp.prototype.removeEditor = function(editorRootElement) {
+TextApp.prototype.removeEditor = function (editorRootElement) {
   // Let the object do any clean up it needs.
   if (this.editor_ !== null) {
     this.editor_.destroy();
@@ -85,36 +85,40 @@ TextApp.prototype.removeEditor = function(editorRootElement) {
 /**
  * Called when all the services have started and settings are loaded.
  */
-TextApp.prototype.onSettingsReady_ = function() {
+TextApp.prototype.onSettingsReady_ = function () {
   this.settingsController_ = new SettingsController(this.settings_);
 
   this.initEditor_();
 
   this.windowController_.setAlwaysOnTop(this.settings_.get('alwaysontop'));
 
-  chrome.runtime.getBackgroundPage(function(bg) {
-    bg.background.onWindowReady(this);
-  }.bind(this));
+  chrome.runtime.getBackgroundPage(
+    function (bg) {
+      bg.background.onWindowReady(this);
+    }.bind(this),
+  );
 };
 
 /**
  * Create all of the controllers the editor needs.
  */
-TextApp.prototype.initControllers_ = function() {
-  this.dialogController_ =
-      new DialogController($('#dialog-container'), this.editor_);
+TextApp.prototype.initControllers_ = function () {
+  this.dialogController_ = new DialogController($('#dialog-container'), this.editor_);
   this.tabs_ = new Tabs(this.editor_, this.dialogController_, this.settings_);
   this.menuController_ = new MenuController(this.tabs_);
-  this.windowController_ =
-      new WindowController(this.editor_, this.settings_, this.tabs_);
+  this.windowController_ = new WindowController(this.editor_, this.settings_, this.tabs_);
   this.hotkeysController_ = new HotkeysController(
-      this.windowController_, this.tabs_, this.editor_, this.settings_);
+    this.windowController_,
+    this.tabs_,
+    this.editor_,
+    this.settings_,
+  );
   this.searchController_ = new SearchController(this.editor_.getSearch());
 };
 /**
  * Ensures all controllers are notified of a new editor instance.
  */
-TextApp.prototype.updateControllers_ = function() {
+TextApp.prototype.updateControllers_ = function () {
   this.tabs_.updateEditor(this.editor_);
   this.windowController_.updateEditor(this.editor_);
   this.hotkeysController_.updateEditor(this.editor_);
@@ -124,7 +128,7 @@ TextApp.prototype.updateControllers_ = function() {
 /**
  * Loads all settings into the current editor.
  */
-TextApp.prototype.loadSettingsIntoEditor = function() {
+TextApp.prototype.loadSettingsIntoEditor = function () {
   this.setTheme();
   this.editor_.setFontSize(this.settings_.get('fontsize'));
   this.editor_.showHideLineNumbers(this.settings_.get('linenumbers'));
@@ -137,15 +141,17 @@ TextApp.prototype.loadSettingsIntoEditor = function() {
 /**
  * Create a new editor and load all settings.
  */
-TextApp.prototype.initEditor_ = function() {
+TextApp.prototype.initEditor_ = function () {
   // Remove any editor that already exists.
   const editor = document.getElementById('editor');
   this.removeEditor(editor);
 
   if (this.settings_.get('screenreadermode')) {
     this.editor_ = new EditorTextArea(editor, this.settings_);
-  } else {
+  } else if (this.settings_.get('usecm')) {
     this.editor_ = new EditorCodeMirror(editor, this.settings_);
+  } else {
+    this.editor_ = new EditorMonaco(editor);
   }
 
   if (!this.tabs_) {
@@ -181,7 +187,7 @@ TextApp.prototype.initEditor_ = function() {
  * @param {string} key
  * @param {*} value
  */
-TextApp.prototype.onSettingsChanged_ = function(e, key, value) {
+TextApp.prototype.onSettingsChanged_ = function (e, key, value) {
   switch (key) {
     case 'alwaysontop':
       this.windowController_.setAlwaysOnTop(value);
@@ -228,6 +234,6 @@ TextApp.prototype.onSettingsChanged_ = function(e, key, value) {
 
 const textApp = new TextApp();
 
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   textApp.init();
 });
